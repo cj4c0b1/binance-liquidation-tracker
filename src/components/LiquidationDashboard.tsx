@@ -57,7 +57,7 @@ const LiquidationDashboard = () => {
           const newLiquidations: LiquidationData[] = eventsToProcess.map((item: any) => ({
             id: `${item.o.orderId}-${item.o.tradeId || item.E}-${Math.random()}`,
             symbol: item.o.s, // Corrected field name from 'symbol' to 's'
-            side: item.o.side,
+            side: item.o.S, // Corrected field name from 'side' to 'S'
             price: item.o.p, // Corrected field name from 'price' to 'p'
             quantity: item.o.q, // Corrected field name from 'origQty' to 'q'
             time: new Date(item.E).toLocaleTimeString('en-US', { hour12: false }),
