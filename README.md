@@ -98,7 +98,7 @@ interface LiquidationData {
 - Connects to `wss://fstream.binance.com/ws/!forceOrder@arr`
 - Handles both single events and batch arrays
 - Implements automatic reconnection with exponential backoff
-- Processes up to 1,000 recent liquidation events in memory
+- Processes liquidation events continuously without a fixed limit
 
 ### Data Processing
 - Filters liquidations by symbol (partial string matching)
@@ -114,7 +114,6 @@ interface LiquidationData {
 
 ## Performance Considerations
 
-- Maintains maximum of 1,000 liquidation events in memory
 - Efficient React state updates using functional updates
 - Memoized calculations for chart data generation
 - Optimized WebSocket message processing
