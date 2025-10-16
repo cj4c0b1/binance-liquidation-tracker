@@ -21,7 +21,7 @@ const LiquidationDashboard = () => {
   const [filterSymbol, setFilterSymbol] = useState('');
   const [sortBy, setSortBy] = useState('time');
   const [sortOrder, setSortOrder] = useState('desc');
-  const streamRef = useRef<WebSocket | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const maxDataPoints = 1000;
 
@@ -117,7 +117,7 @@ const LiquidationDashboard = () => {
       reconnectTimeoutRef.current = null;
     }
     setIsConnected(false);
-  }, []);
+  }, [wsRef]);
 
   // Initialize on mount
   useEffect(() => {
