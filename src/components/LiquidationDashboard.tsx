@@ -187,7 +187,7 @@ const LiquidationDashboard = () => {
     }
   };
 
-  const totalVolume = liquidations.reduce((acc, item) => acc + parseFloat(item.quantity), 0).toFixed(2);
+  const totalVolume = liquidations.reduce((acc, item) => acc + (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0), 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const bullishCount = liquidations.filter((item) => item.side === 'BUY').length;
   const bearishCount = liquidations.filter((item) => item.side === 'SELL').length;
 
@@ -251,7 +251,7 @@ const LiquidationDashboard = () => {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Total Volume</p>
-            <p className="text-xl sm:text-2xl font-bold text-white">{totalVolume}</p>
+            <p className="text-xl sm:text-2xl font-bold text-white">${totalVolume}</p>
           </div>
           <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
             <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Bullish (Buy)</p>
