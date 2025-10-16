@@ -17,7 +17,7 @@ const LiquidationDashboard = () => {
   const generateMockLiquidation = useCallback(() => {
     const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT'];
     const sides = ['SELL', 'BUY'];
-
+    
     return {
       id: Date.now() + Math.random(),
       symbol: symbols[Math.floor(Math.random() * symbols.length)],
@@ -41,7 +41,7 @@ const LiquidationDashboard = () => {
 
         try {
           const newLiquidation = generateMockLiquidation();
-
+          
           setLiquidations((prev) => {
             const updated = [newLiquidation, ...prev];
             // Keep only last 100 events
@@ -130,24 +130,9 @@ const LiquidationDashboard = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-3">
-              <Zap className="text-yellow-400" size={32} />
-              <h1 className="text-3xl sm:text-4xl font-bold text-white">Liquidation Monitor</h1>
-            </div>
-            <a 
-              href="https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00GDL9H1UU" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity"
-              title="Trade on Binance"
-            >
-              <img 
-                src="/binance-logo.png" 
-                alt="Binance" 
-                className="h-10 w-auto"
-              />
-            </a>
+          <div className="flex items-center gap-3 mb-2">
+            <Zap className="text-yellow-400" size={32} />
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">Liquidation Monitor</h1>
           </div>
           <p className="text-slate-300 text-sm sm:text-base">Real-time Binance futures liquidation stream</p>
         </div>
