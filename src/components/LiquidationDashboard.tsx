@@ -1,0 +1,305 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { AlertCircle, Zap, Filter, ArrowUpDown } from 'lucide-react';
+
+const LiquidationDashboard = () => {
+  // In-memory state management (simulates Redis)
+  const [liquidations, setLiquidations] = useState<any[]>([]);
+  const [filteredData, setFilteredData] = useState<any[]>([]);
+  const [isConnected, setIsConnected] = useState(true);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [filterSymbol, setFilterSymbol] = useState('');
+  const [sortBy, setSortBy] = useState('time');
+  const [sortOrder, setSortOrder] = useState('desc');
+  const streamRef = useRef<NodeJS.Timeout | null>(null);
+  const maxDataPoints = 100;
+
+  // Mock Binance liquidation data generator
+  const generateMockLiquidation = useCallback(() => {
+    const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT'];
+    const sides = ['SELL', 'BUY'];
+    
+    return {
+      id: Date.now() + Math.random(),
+      symbol: symbols[Math.floor(Math.random() * symbols.length)],
+      side: sides[Math.floor(Math.random() * sides.length)],
+      price: (Math.random() * 50000 + 100).toFixed(2),
+      quantity: (Math.random() * 100 + 10).toFixed(2),
+      time: new Date().toLocaleTimeString('en-US', { hour12: false }),
+      timestamp: Date.now(),
+    };
+  }, []);
+
+  // Initialize stream with error handling
+  const startStream = useCallback(() => {
+    try {
+      setConnectionError(null);
+      setIsConnected(true);
+
+      // Simulate WebSocket connection with realistic intervals
+      streamRef.current = setInterval(() => {
+        if (!isConnected) return;
+
+        try {
+          const newLiquidation = generateMockLiquidation();
+          
+          setLiquidations((prev) => {
+            const updated = [newLiquidation, ...prev];
+            // Keep only last 100 events
+            return updated.slice(0, maxDataPoints);
+          });
+        } catch (error) {
+          setConnectionError('Failed to process liquidation data');
+          setIsConnected(false);
+        }
+      }, 800); // Emit every 800ms (realistic market frequency)
+
+    } catch (err) {
+      setConnectionError('Failed to establish stream connection');
+      setIsConnected(false);
+    }
+  }, [generateMockLiquidation, isConnected]);
+
+  // Stop stream
+  const stopStream = useCallback(() => {
+    if (streamRef.current) {
+      clearInterval(streamRef.current);
+    }
+    setIsConnected(false);
+  }, []);
+
+  // Initialize on mount
+  useEffect(() => {
+    startStream();
+    return () => stopStream();
+  }, [startStream, stopStream]);
+
+  // Apply filtering and sorting
+  useEffect(() => {
+    let data = [...liquidations];
+
+    // Filter by symbol
+    if (filterSymbol) {
+      data = data.filter((item) =>
+        item.symbol.toLowerCase().includes(filterSymbol.toLowerCase())
+      );
+    }
+
+    // Sort data
+    const sortMap: Record<string, string> = {
+      time: 'timestamp',
+      price: 'price',
+      quantity: 'quantity',
+      symbol: 'symbol',
+    };
+
+    data.sort((a, b) => {
+      const key = sortMap[sortBy];
+      const aVal = sortBy === 'price' || sortBy === 'quantity' ? parseFloat(a[key]) : a[key];
+      const bVal = sortBy === 'price' || sortBy === 'quantity' ? parseFloat(b[key]) : b[key];
+
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1;
+      }
+      return aVal < bVal ? 1 : -1;
+    });
+
+    setFilteredData(data);
+  }, [liquidations, filterSymbol, sortBy, sortOrder]);
+
+  // Retry connection
+  const retryConnection = useCallback(() => {
+    setLiquidations([]);
+    startStream();
+  }, [startStream]);
+
+  const handleSortChange = (newSort: string) => {
+    if (sortBy === newSort) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(newSort);
+      setSortOrder('desc');
+    }
+  };
+
+  const totalVolume = liquidations.reduce((acc, item) => acc + parseFloat(item.quantity), 0).toFixed(2);
+  const bullishCount = liquidations.filter((item) => item.side === 'BUY').length;
+  const bearishCount = liquidations.filter((item) => item.side === 'SELL').length;
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 sm:p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <Zap className="text-yellow-400" size={32} />
+            <h1 className="text-3xl sm:text-4xl font-bold text-white">Liquidation Monitor</h1>
+          </div>
+          <p className="text-slate-300 text-sm sm:text-base">Real-time Binance futures liquidation stream</p>
+        </div>
+
+        {/* Status Bar */}
+        <div className="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
+              <span className={`text-sm font-medium ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
+                {isConnected ? 'Connected to Stream' : 'Connection Lost'}
+              </span>
+            </div>
+            <div className="text-slate-400 text-xs sm:text-sm">
+              Events: <span className="text-white font-semibold">{liquidations.length}</span>
+            </div>
+          </div>
+          {connectionError && (
+            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded flex items-start gap-2">
+              <AlertCircle size={16} className="text-red-400 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-red-400 text-sm">{connectionError}</p>
+                <button
+                  onClick={retryConnection}
+                  className="mt-2 px-3 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 text-xs rounded transition"
+                >
+                  Retry Connection
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Total Volume</p>
+            <p className="text-xl sm:text-2xl font-bold text-white">{totalVolume}</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Bullish (Buy)</p>
+            <p className="text-xl sm:text-2xl font-bold text-green-400">{bullishCount}</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Bearish (Sell)</p>
+            <p className="text-xl sm:text-2xl font-bold text-red-400">{bearishCount}</p>
+          </div>
+          <div className="bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <p className="text-slate-400 text-xs uppercase tracking-wide mb-2">Ratio</p>
+            <p className="text-xl sm:text-2xl font-bold text-blue-400">
+              {liquidations.length > 0 ? ((bullishCount / liquidations.length) * 100).toFixed(0) : '0'}%
+            </p>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block text-sm text-slate-300 mb-2">
+                <Filter size={16} className="inline mr-1" />
+                Filter Symbol
+              </label>
+              <input
+                type="text"
+                placeholder="e.g., BTC, ETH"
+                value={filterSymbol}
+                onChange={(e) => setFilterSymbol(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded text-white placeholder-slate-400 text-sm focus:outline-none focus:border-blue-400"
+              />
+            </div>
+            <div className="flex gap-2 flex-wrap sm:items-end">
+              <button
+                onClick={() => handleSortChange('time')}
+                className={`px-3 py-2 rounded text-sm transition flex items-center gap-1 ${
+                  sortBy === 'time'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                <ArrowUpDown size={14} />
+                Time
+              </button>
+              <button
+                onClick={() => handleSortChange('price')}
+                className={`px-3 py-2 rounded text-sm transition flex items-center gap-1 ${
+                  sortBy === 'price'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                <ArrowUpDown size={14} />
+                Price
+              </button>
+              <button
+                onClick={() => handleSortChange('quantity')}
+                className={`px-3 py-2 rounded text-sm transition flex items-center gap-1 ${
+                  sortBy === 'quantity'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+              >
+                <ArrowUpDown size={14} />
+                Qty
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-700 bg-slate-900">
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Time</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Symbol</th>
+                  <th className="px-4 py-3 text-left text-slate-300 font-semibold">Side</th>
+                  <th className="px-4 py-3 text-right text-slate-300 font-semibold">Price</th>
+                  <th className="px-4 py-3 text-right text-slate-300 font-semibold">Quantity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredData.length > 0 ? (
+                  filteredData.map((item) => (
+                    <tr
+                      key={item.id}
+                      className="border-b border-slate-700 hover:bg-slate-700/50 transition"
+                    >
+                      <td className="px-4 py-3 text-slate-300 text-xs">{item.time}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{item.symbol}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 w-fit ${
+                            item.side === 'BUY'
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-red-500/20 text-red-400'
+                          }`}
+                        >
+                          {item.side === 'BUY' ? '▲' : '▼'} {item.side}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-slate-300">${item.price}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">{item.quantity}</td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                      {liquidations.length === 0
+                        ? 'Waiting for liquidation data...'
+                        : 'No data matches your filters'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-6 text-center text-xs text-slate-500">
+          <p>Simulated real-time data • In-memory state management • Mobile optimized</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default LiquidationDashboard;
