@@ -23,7 +23,6 @@ const LiquidationDashboard = () => {
   const [sortOrder, setSortOrder] = useState('desc');
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxDataPoints = 1000;
 
   // Initialize WebSocket connection
   const startWebSocket = useCallback(() => {
@@ -67,7 +66,7 @@ const LiquidationDashboard = () => {
 
           setLiquidations((prev) => {
             const updated = [...newLiquidations, ...prev];
-            return updated.slice(0, maxDataPoints);
+            return updated;
           });
         } catch (error) {
           console.error('❌ Error processing WebSocket message:', error);
