@@ -201,7 +201,7 @@ const LiquidationDashboard = () => {
   }, {} as Record<string, number>);
 
   const chartDataArray = Object.entries(chartData)
-    .map(([symbol, total]) => ({ symbol, total: parseFloat(total.toFixed(2)) }))
+    .map(([symbol, total]) => ({ symbol: symbol.replace('USDT', ''), total: parseFloat(total.toFixed(2)) }))
     .sort((a, b) => b.total - a.total)
     .slice(0, 10); // Show top 10 symbols
 
@@ -383,7 +383,7 @@ const LiquidationDashboard = () => {
                       className="border-b border-slate-700 hover:bg-slate-700/50 transition"
                     >
                       <td className="px-4 py-3 text-slate-300 text-xs">{item.time}</td>
-                      <td className="px-4 py-3 text-white font-semibold">{item.symbol}</td>
+                      <td className="px-4 py-3 text-white font-semibold">{item.symbol.replace('USDT', '')}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 w-fit ${
