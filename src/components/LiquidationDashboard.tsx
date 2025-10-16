@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertCircle, Zap, Filter, ArrowUpDown } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface LiquidationData {
   id: string;
@@ -191,6 +192,19 @@ const LiquidationDashboard = () => {
   const bullishCount = liquidations.filter((item) => item.side === 'BUY').length;
   const bearishCount = liquidations.filter((item) => item.side === 'SELL').length;
 
+  // Calculate totals by symbol for the chart
+  const chartData = liquidations.reduce((acc, item) => {
+    const symbol = item.symbol;
+    const value = (parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0);
+    acc[symbol] = (acc[symbol] || 0) + value;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const chartDataArray = Object.entries(chartData)
+    .map(([symbol, total]) => ({ symbol, total: parseFloat(total.toFixed(2)) }))
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10); // Show top 10 symbols
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
@@ -268,6 +282,30 @@ const LiquidationDashboard = () => {
             </p>
           </div>
         </div>
+
+        {/* Chart */}
+        {chartDataArray.length > 0 && (
+          <div className="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
+            <h3 className="text-lg font-semibold text-white mb-4">Total Volume by Symbol</h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={chartDataArray}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="symbol" stroke="#9CA3AF" />
+                <YAxis stroke="#9CA3AF" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#1F2937',
+                    border: '1px solid #374151',
+                    borderRadius: '8px',
+                    color: '#F9FAFB'
+                  }}
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, 'Total Value']}
+                />
+                <Bar dataKey="total" fill="#3B82F6" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        )}
 
         {/* Controls */}
         <div className="mb-6 bg-slate-800 rounded-lg p-4 border border-slate-700">
