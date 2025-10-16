@@ -21,9 +21,9 @@ const LiquidationDashboard = () => {
   const [filterSymbol, setFilterSymbol] = useState('');
   const [sortBy, setSortBy] = useState('time');
   const [sortOrder, setSortOrder] = useState('desc');
-  const wsRef = useRef<WebSocket | null>(null);
+  const streamRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const maxDataPoints = 100;
+  const maxDataPoints = 1000;
 
   // Initialize WebSocket connection
   const startWebSocket = useCallback(() => {
