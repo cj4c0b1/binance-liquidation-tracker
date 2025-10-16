@@ -334,6 +334,7 @@ const LiquidationDashboard = () => {
                   <th className="px-4 py-3 text-left text-slate-300 font-semibold">Side</th>
                   <th className="px-4 py-3 text-right text-slate-300 font-semibold">Price</th>
                   <th className="px-4 py-3 text-right text-slate-300 font-semibold">Quantity</th>
+                  <th className="px-4 py-3 text-right text-slate-300 font-semibold">Value</th>
                 </tr>
               </thead>
               <tbody>
@@ -358,11 +359,12 @@ const LiquidationDashboard = () => {
                       </td>
                       <td className="px-4 py-3 text-right text-slate-300">${(parseFloat(item.price) || 0).toLocaleString()}</td>
                       <td className="px-4 py-3 text-right text-slate-300">{(parseFloat(item.quantity) || 0).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">${((parseFloat(item.price) || 0) * (parseFloat(item.quantity) || 0)).toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-400">
+                    <td colSpan={6} className="px-4 py-8 text-center text-slate-400">
                       {liquidations.length === 0
                         ? 'Waiting for liquidation data...'
                         : 'No data matches your filters'}
