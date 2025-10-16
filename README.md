@@ -3,10 +3,13 @@
 
 A real-time dashboard for monitoring Binance futures liquidations using WebSocket connections. Track live liquidation events with filtering, sorting, and visualization capabilities.
 
+**🔗 [View on GitHub](https://github.com/cj4c0b1/binance-liquidation-tracker)**
+
 ![Real-time liquidation monitoring](https://img.shields.io/badge/Status-Live-green) 
 ![React](https://img.shields.io/badge/React-19.2.0-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue)
 ![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4.1-blue)
+![GitHub](https://img.shields.io/badge/GitHub-Repository-black)
 
 ## Features
 
@@ -48,7 +51,7 @@ The dashboard provides:
 
 1. Clone the repository:
 ```bash
-git clone <repository-url>
+git clone https://github.com/cj4c0b1/binance-liquidation-tracker.git
 cd binance-liquidation-tracker
 ```
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { AlertCircle, Zap, Filter, ArrowUpDown } from 'lucide-react';
+import { AlertCircle, Zap, Filter, ArrowUpDown, Github } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface LiquidationData {
@@ -214,19 +214,30 @@ const LiquidationDashboard = () => {
               <Zap className="text-yellow-400" size={32} />
               <h1 className="text-3xl sm:text-4xl font-bold text-white">Liquidation Monitor</h1>
             </div>
-            <a 
-              href="https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00GDL9H1UU" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="hover:opacity-80 transition-opacity"
-              title="Trade on Binance"
-            >
-              <img 
-                src="/binance-logo.png" 
-                alt="Binance" 
-                className="h-10 w-auto"
-              />
-            </a>
+            <div className="flex items-center gap-4">
+              <a 
+                href="https://www.binance.com/activity/referral-entry/CPA?ref=CPA_00GDL9H1UU" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+                title="Trade on Binance"
+              >
+                <img 
+                  src="/binance-logo.png" 
+                  alt="Binance" 
+                  className="h-10 w-auto"
+                />
+              </a>
+              <a 
+                href="https://github.com/cj4c0b1/binance-liquidation-tracker" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="hover:opacity-80 transition-opacity"
+                title="View on GitHub"
+              >
+                <Github className="text-white" size={32} />
+              </a>
+            </div>
           </div>
           <p className="text-slate-300 text-sm sm:text-base">Real-time Binance futures liquidation stream</p>
         </div>
