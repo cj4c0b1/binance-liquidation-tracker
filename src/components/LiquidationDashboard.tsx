@@ -55,7 +55,7 @@ const LiquidationDashboard = () => {
           }
 
           const newLiquidations: LiquidationData[] = eventsToProcess.map((item: any) => ({
-            id: `${item.o.orderId}-${item.o.tradeId || Date.now()}`,
+            id: `${item.o.orderId}-${item.o.tradeId || item.E}-${Math.random()}`,
             symbol: item.o.symbol,
             side: item.o.side,
             price: item.o.price,
