@@ -1,4 +1,5 @@
 # Binance Liquidation Tracker
+<img width="1404" height="1239" alt="image" src="https://github.com/user-attachments/assets/656f6351-f7ab-4873-99ae-5cef6a6bead4" />
 
 A real-time dashboard for monitoring Binance futures liquidations using WebSocket connections. Track live liquidation events with filtering, sorting, and visualization capabilities.
 
