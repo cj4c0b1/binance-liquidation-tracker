@@ -1,46 +1,148 @@
-# Getting Started with Create React App
+# Binance Liquidation Tracker
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A real-time dashboard for monitoring Binance futures liquidations using WebSocket connections. Track live liquidation events with filtering, sorting, and visualization capabilities.
+
+![Real-time liquidation monitoring](https://img.shields.io/badge/Status-Live-green) 
+![React](https://img.shields.io/badge/React-19.2.0-blue)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9.5-blue)
+![Tailwind CSS](https://img.shields.io/badge/TailwindCSS-3.4.1-blue)
+
+## Features
+
+- **Real-time Data Stream**: Live connection to Binance futures liquidation WebSocket
+- **Interactive Dashboard**: Modern, responsive UI with dark theme
+- **Data Visualization**: Bar charts showing liquidation volume by symbol
+- **Advanced Filtering**: Filter liquidations by trading symbol
+- **Flexible Sorting**: Sort by time, price, quantity, or symbol
+- **Live Statistics**: Real-time metrics including total volume and bull/bear ratios
+- **Mobile Optimized**: Fully responsive design for all devices
+- **Auto-reconnection**: Automatic WebSocket reconnection on connection loss
+
+## Screenshots
+
+The dashboard provides:
+- Live liquidation feed with real-time updates
+- Volume statistics and bull/bear sentiment indicators
+- Interactive charts powered by Recharts
+- Symbol-based filtering and multi-column sorting
+- Connection status monitoring with error handling
+
+## Tech Stack
+
+- **Frontend**: React 19.2.0 with TypeScript
+- **Styling**: Tailwind CSS for responsive design
+- **Charts**: Recharts for data visualization
+- **Icons**: Lucide React for modern iconography
+- **Data Source**: Binance WebSocket API (`wss://fstream.binance.com/ws/!forceOrder@arr`)
+- **Build Tool**: Create React App
+
+## Quick Start
+
+### Prerequisites
+
+- Node.js (v16 or higher)
+- npm or yarn package manager
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone <repository-url>
+cd binance-liquidation-tracker
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm start
+```
+
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+The application will automatically connect to Binance's liquidation WebSocket stream and begin displaying real-time data.
 
 ## Available Scripts
 
-In the project directory, you can run:
-
 ### `npm start`
-
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
-
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+Runs the app in development mode with hot reloading enabled.
 
 ### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Launches the test runner in interactive watch mode.
 
 ### `npm run build`
+Builds the app for production with optimized bundles and minification.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Data Structure
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+The app processes Binance liquidation events with the following structure:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```typescript
+interface LiquidationData {
+  id: string;           // Unique identifier
+  symbol: string;       // Trading pair (e.g., "BTCUSDT")
+  side: 'BUY' | 'SELL'; // Liquidation side
+  price: string;        // Liquidation price
+  quantity: string;     // Liquidation quantity
+  time: string;         // Formatted timestamp
+  timestamp: number;    // Unix timestamp
+}
+```
 
-### `npm run eject`
+## Key Features Explained
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+### Real-time WebSocket Connection
+- Connects to `wss://fstream.binance.com/ws/!forceOrder@arr`
+- Handles both single events and batch arrays
+- Implements automatic reconnection with exponential backoff
+- Processes up to 1,000 recent liquidation events in memory
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Data Processing
+- Filters liquidations by symbol (partial string matching)
+- Sorts by time, price, quantity, or symbol (ascending/descending)
+- Calculates aggregate statistics (volume, counts, ratios)
+- Generates chart data for top 10 symbols by volume
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+### User Interface
+- Dark theme optimized for trading environments
+- Responsive grid layout for mobile and desktop
+- Live connection status indicators
+- Interactive sorting buttons with visual feedback
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Performance Considerations
 
-## Learn More
+- Maintains maximum of 1,000 liquidation events in memory
+- Efficient React state updates using functional updates
+- Memoized calculations for chart data generation
+- Optimized WebSocket message processing
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## Contributing
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## Deployment
+
+### Production Build
+```bash
+npm run build
+```
+
+The build folder contains optimized static files ready for deployment to any static hosting service.
+
+### Netlify Deployment
+This project is configured for Netlify deployment with automatic builds from your git repository.
+
+## License
+
+This project is open source and available under the MIT License.
+
+## Disclaimer
+
+This tool is for educational and informational purposes only. Always conduct your own research before making trading decisions. Liquidation data is provided by Binance and subject to their terms of service.
