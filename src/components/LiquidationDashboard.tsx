@@ -1,77 +1,128 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { AlertCircle, Zap, Filter, ArrowUpDown } from 'lucide-react';
 
+interface LiquidationData {
+  id: string;
+  symbol: string;
+  side: string;
+  price: string;
+  quantity: string;
+  time: string;
+  timestamp: number;
+}
+
 const LiquidationDashboard = () => {
   // In-memory state management (simulates Redis)
-  const [liquidations, setLiquidations] = useState<any[]>([]);
-  const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [isConnected, setIsConnected] = useState(true);
+  const [liquidations, setLiquidations] = useState<LiquidationData[]>([]);
+  const [filteredData, setFilteredData] = useState<LiquidationData[]>([]);
+  const [isConnected, setIsConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [filterSymbol, setFilterSymbol] = useState('');
   const [sortBy, setSortBy] = useState('time');
   const [sortOrder, setSortOrder] = useState('desc');
-  const streamRef = useRef<NodeJS.Timeout | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const maxDataPoints = 100;
 
-  // Mock Binance liquidation data generator
-  const generateMockLiquidation = useCallback(() => {
-    const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'ADAUSDT', 'XRPUSDT', 'DOGEUSDT'];
-    const sides = ['SELL', 'BUY'];
-
-    return {
-      id: Date.now() + Math.random(),
-      symbol: symbols[Math.floor(Math.random() * symbols.length)],
-      side: sides[Math.floor(Math.random() * sides.length)],
-      price: (Math.random() * 50000 + 100).toFixed(2),
-      quantity: (Math.random() * 100 + 10).toFixed(2),
-      time: new Date().toLocaleTimeString('en-US', { hour12: false }),
-      timestamp: Date.now(),
-    };
-  }, []);
-
-  // Initialize stream with error handling
-  const startStream = useCallback(() => {
+  // Initialize WebSocket connection
+  const startWebSocket = useCallback(() => {
     try {
       setConnectionError(null);
-      setIsConnected(true);
+      console.log('🚀 Attempting to connect to WebSocket...');
+      const ws = new WebSocket('wss://fstream.binance.com/ws/!forceOrder@arr');
 
-      // Simulate WebSocket connection with realistic intervals
-      streamRef.current = setInterval(() => {
-        if (!isConnected) return;
+      ws.onopen = () => {
+        setIsConnected(true);
+        console.log('✅ WebSocket connected successfully to Binance liquidation stream');
+      };
 
+      ws.onmessage = (event) => {
+        console.log('📨 Received WebSocket message:', event.data.substring(0, 200) + '...');
         try {
-          const newLiquidation = generateMockLiquidation();
+          const data = JSON.parse(event.data);
+          let eventsToProcess: any[] = [];
+
+          // Handle both single objects and arrays
+          if (Array.isArray(data)) {
+            eventsToProcess = data;
+            console.log(`📊 Processing ${data.length} liquidation events`);
+          } else if (data && data.e === 'forceOrder') {
+            eventsToProcess = [data];
+            console.log(`📊 Processing 1 liquidation event`);
+          } else {
+            console.warn('⚠️ Received non-liquidation data:', data);
+            return;
+          }
+
+          const newLiquidations: LiquidationData[] = eventsToProcess.map((item: any) => ({
+            id: `${item.o.orderId}-${item.o.tradeId || Date.now()}`,
+            symbol: item.o.symbol,
+            side: item.o.side,
+            price: item.o.price,
+            quantity: item.o.origQty,
+            time: new Date(item.E).toLocaleTimeString('en-US', { hour12: false }),
+            timestamp: item.E,
+          }));
 
           setLiquidations((prev) => {
-            const updated = [newLiquidation, ...prev];
-            // Keep only last 100 events
+            const updated = [...newLiquidations, ...prev];
             return updated.slice(0, maxDataPoints);
           });
         } catch (error) {
+          console.error('❌ Error processing WebSocket message:', error);
           setConnectionError('Failed to process liquidation data');
-          setIsConnected(false);
         }
-      }, 800); // Emit every 800ms (realistic market frequency)
+      };
 
+      ws.onerror = (error) => {
+        console.error('❌ WebSocket error occurred:', error);
+        setConnectionError('WebSocket connection error - check console for details');
+        setIsConnected(false);
+      };
+
+      ws.onclose = (event) => {
+        console.log('🔌 WebSocket connection closed:', event.code, event.reason);
+        setIsConnected(false);
+
+        // Attempt to reconnect after 5 seconds if not manually closed
+        if (event.code !== 1000) {
+          console.log('🔄 Attempting to reconnect in 5 seconds...');
+          setConnectionError('Connection lost, attempting to reconnect...');
+          reconnectTimeoutRef.current = setTimeout(() => {
+            console.log('🔄 Reconnecting to WebSocket...');
+            startWebSocket();
+          }, 5000);
+        }
+      };
+
+      wsRef.current = ws;
     } catch (err) {
-      setConnectionError('Failed to establish stream connection');
+      console.error('❌ Failed to establish WebSocket connection:', err);
+      setConnectionError('Failed to establish WebSocket connection');
       setIsConnected(false);
+      // Alert for debugging
+      alert('WebSocket connection failed. Check console for details.');
     }
-  }, [generateMockLiquidation, isConnected]);
+  }, []);
 
-  // Stop stream
-  const stopStream = useCallback(() => {
-    if (streamRef.current) {
-      clearInterval(streamRef.current);
+  // Stop WebSocket connection
+  const stopWebSocket = useCallback(() => {
+    if (wsRef.current) {
+      wsRef.current.close(1000, 'Manual disconnect');
+      wsRef.current = null;
+    }
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
     }
     setIsConnected(false);
   }, []);
 
   // Initialize on mount
   useEffect(() => {
-    startStream();
-    return () => stopStream();
-  }, [startStream, stopStream]);
+    startWebSocket();
+    return () => stopWebSocket();
+  }, [startWebSocket, stopWebSocket]);
 
   // Apply filtering and sorting
   useEffect(() => {
@@ -85,17 +136,31 @@ const LiquidationDashboard = () => {
     }
 
     // Sort data
-    const sortMap: Record<string, string> = {
-      time: 'timestamp',
-      price: 'price',
-      quantity: 'quantity',
-      symbol: 'symbol',
-    };
-
     data.sort((a, b) => {
-      const key = sortMap[sortBy];
-      const aVal = sortBy === 'price' || sortBy === 'quantity' ? parseFloat(a[key]) : a[key];
-      const bVal = sortBy === 'price' || sortBy === 'quantity' ? parseFloat(b[key]) : b[key];
+      let aVal: string | number;
+      let bVal: string | number;
+
+      switch (sortBy) {
+        case 'time':
+          aVal = a.timestamp;
+          bVal = b.timestamp;
+          break;
+        case 'price':
+          aVal = parseFloat(a.price);
+          bVal = parseFloat(b.price);
+          break;
+        case 'quantity':
+          aVal = parseFloat(a.quantity);
+          bVal = parseFloat(b.quantity);
+          break;
+        case 'symbol':
+          aVal = a.symbol;
+          bVal = b.symbol;
+          break;
+        default:
+          aVal = a.timestamp;
+          bVal = b.timestamp;
+      }
 
       if (sortOrder === 'asc') {
         return aVal > bVal ? 1 : -1;
@@ -108,9 +173,10 @@ const LiquidationDashboard = () => {
 
   // Retry connection
   const retryConnection = useCallback(() => {
+    stopWebSocket();
     setLiquidations([]);
-    startStream();
-  }, [startStream]);
+    setTimeout(() => startWebSocket(), 100);
+  }, [startWebSocket, stopWebSocket]);
 
   const handleSortChange = (newSort: string) => {
     if (sortBy === newSort) {
@@ -158,7 +224,7 @@ const LiquidationDashboard = () => {
             <div className="flex items-center gap-3">
               <div className={`w-3 h-3 rounded-full ${isConnected ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`} />
               <span className={`text-sm font-medium ${isConnected ? 'text-green-400' : 'text-red-400'}`}>
-                {isConnected ? 'Connected to Stream' : 'Connection Lost'}
+                {isConnected ? 'Connected to Binance Stream' : 'Disconnected'}
               </span>
             </div>
             <div className="text-slate-400 text-xs sm:text-sm">
@@ -290,8 +356,8 @@ const LiquidationDashboard = () => {
                           {item.side === 'BUY' ? '▲' : '▼'} {item.side}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-300">${item.price}</td>
-                      <td className="px-4 py-3 text-right text-slate-300">{item.quantity}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">${parseFloat(item.price).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">{parseFloat(item.quantity).toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
@@ -310,7 +376,7 @@ const LiquidationDashboard = () => {
 
         {/* Footer */}
         <div className="mt-6 text-center text-xs text-slate-500">
-          <p>Simulated real-time data • In-memory state management • Mobile optimized</p>
+          <p>Live Binance futures liquidation data • WebSocket connection • Mobile optimized</p>
         </div>
       </div>
     </div>
