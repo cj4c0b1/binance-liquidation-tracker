@@ -56,10 +56,10 @@ const LiquidationDashboard = () => {
 
           const newLiquidations: LiquidationData[] = eventsToProcess.map((item: any) => ({
             id: `${item.o.orderId}-${item.o.tradeId || item.E}-${Math.random()}`,
-            symbol: item.o.symbol,
+            symbol: item.o.s, // Corrected field name from 'symbol' to 's'
             side: item.o.side,
-            price: item.o.price,
-            quantity: item.o.origQty,
+            price: item.o.p, // Corrected field name from 'price' to 'p'
+            quantity: item.o.q, // Corrected field name from 'origQty' to 'q'
             time: new Date(item.E).toLocaleTimeString('en-US', { hour12: false }),
             timestamp: item.E,
           }));
@@ -356,8 +356,8 @@ const LiquidationDashboard = () => {
                           {item.side === 'BUY' ? '▲' : '▼'} {item.side}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-right text-slate-300">${parseFloat(item.price).toLocaleString()}</td>
-                      <td className="px-4 py-3 text-right text-slate-300">{parseFloat(item.quantity).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">${(parseFloat(item.price) || 0).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-right text-slate-300">{(parseFloat(item.quantity) || 0).toLocaleString()}</td>
                     </tr>
                   ))
                 ) : (
